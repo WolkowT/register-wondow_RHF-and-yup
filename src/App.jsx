@@ -2,10 +2,10 @@ import style from './app.module.css'
 import * as yup from 'yup';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 
 
-const Window = ({ handleSubmit, errors, submitForm, register, isValid, submitButtonRef }) => (
+const Window = ({ handleSubmit, errors, submitForm, register, submitButtonRef, isButtonDisabled }) => (
   <>
     <div className={style.registrationForm}>
       <h2>Регистрация</h2>
@@ -46,7 +46,7 @@ const Window = ({ handleSubmit, errors, submitForm, register, isValid, submitBut
           {errors.confirmPassword ? <p className={style.errorMessage}>{errors.confirmPassword.message}</p> : <p className={style.errorMessage}></p>}
         </div>
         
-        <button ref={submitButtonRef} type="submit" className={style.submitBtn} disabled={!isValid}>Зарегистрироваться</button>
+        <button ref={submitButtonRef} type="submit" className={style.submitBtn} disabled={isButtonDisabled}>Зарегистрироваться</button>
       </form>
     </div>
   </>
@@ -55,7 +55,7 @@ const Window = ({ handleSubmit, errors, submitForm, register, isValid, submitBut
 const registerWindowSchema = yup.object().shape({
   email: yup.string().required('Email обязателен').email('Введите корректный email'),
   password: yup.string().required('Пароль обязателен').min(6, 'Пароль должен быть не менее 6 символов'),
-  confirmPassword: yup.string().oneOf([yup.ref('password')], 'Пароли должны совпадать')
+  confirmPassword: yup.string().oneOf([yup.ref('password')], 'Пароли должны совпадать').required('Поле обязательно для заполнения')
 })
 
 export const App = () => {
@@ -85,15 +85,15 @@ export const App = () => {
 
   const values = watch();
 
-  useEffect(() => {
-    if (isValid && values.email && values.password && values.confirmPassword) {
-      submitButtonRef.current.focus();
-    }
-  }, [isValid, values]);
+  const isFormFilled = Object.values(values).every((value) => value.trim() !== '');
+  const hasValidationErrors = Object.values(errors).some((error) => error);
+
+  isFormFilled && !hasValidationErrors && isValid ? submitButtonRef.current.focus() : null;
+  const isButtonDisabled = !isFormFilled && hasValidationErrors;
 
   return (
     <>
-    <Window submitForm={submitForm} handleSubmit={handleSubmit} errors={errors} isValid={isValid} register={register} submitButtonRef={submitButtonRef}/>
+    <Window submitForm={submitForm} handleSubmit={handleSubmit} errors={errors} isValid={isValid} register={register} submitButtonRef={submitButtonRef} isButtonDisabled={isButtonDisabled}/>
     </>
   );
 };
